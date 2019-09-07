@@ -4,9 +4,6 @@ all: build
 clean:
 	rm -rf torb
 
-deps:
-	gb vendor restore
-
 .PHONY: build
 build:
-	GOPATH=`pwd`:`pwd`/vendor go build -v torb
+	GOPATH=`pwd`:`pwd`/vendor go build -v ./src/torb/*.go
