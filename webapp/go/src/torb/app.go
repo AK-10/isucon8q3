@@ -960,9 +960,14 @@ func getEventWithoutDetail(event Event) (*Event, error) {
 
 func getEvent(eventID, loginUserID int64) (*Event, error) {
 	var event Event
-	if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
-		return nil, err
+	var err error
+	r, _ := NewRedisful()
+	if event, err = r.getEvent(eventID); err != nil {
+		if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+			return nil, err
+		}
 	}
+	r.Close()
 	// initialize
 	event = initEvent(event)
 	var i int64

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 )
 
 const (
@@ -22,6 +23,15 @@ func (r *Redisful) getEvents() ([]*Event, error) {
 func sortEvents(events []*Event) []*Event {
 	sort.Slice(events, func(i, j int) bool { return events[i].ID < events[j].ID })
 	return events
+}
+
+func (r *Redisful) getEvent(eventID int64) (Event, error) {
+	var event Event
+	err := r.GetHashFromCache(EVENTS_KEY, strconv.Itoa(int(eventID)), &event)
+	if err != nil {
+		return event, err
+	}
+	return event, nil
 }
 
 func unmarshalEvents(data [][]byte) []*Event {
