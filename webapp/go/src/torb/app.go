@@ -569,15 +569,20 @@ func main() {
 			return err
 		}
 
-		event, err := getEvent(eventID, user.ID)
+		r, _ := NewRedisful()
+		event, err := r.getEvent(eventID)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return resError(c, "invalid_event", 404)
+			if err := db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+				if err == sql.ErrNoRows {
+					return resError(c, "invalid_event", 404)
+				}
+				return err
 			}
-			return err
-		} else if !event.PublicFg {
+		}
+		if !event.PublicFg {
 			return resError(c, "invalid_event", 404)
 		}
+		r.Close()
 
 		if !validateRank(rank) {
 			return resError(c, "invalid_rank", 404)
