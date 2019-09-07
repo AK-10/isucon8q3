@@ -23,67 +23,6 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-type User struct {
-	ID        int64  `json:"id,omitempty"`
-	Nickname  string `json:"nickname,omitempty"`
-	LoginName string `json:"login_name,omitempty"`
-	PassHash  string `json:"pass_hash,omitempty"`
-}
-
-type Event struct {
-	ID       int64  `json:"id,omitempty"`
-	Title    string `json:"title,omitempty"`
-	PublicFg bool   `json:"public,omitempty"`
-	ClosedFg bool   `json:"closed,omitempty"`
-	Price    int64  `json:"price,omitempty"`
-
-	Total   int                `json:"total"`
-	Remains int                `json:"remains"`
-	Sheets  map[string]*Sheets `json:"sheets,omitempty"`
-}
-
-type Sheets struct {
-	Total   int      `json:"total"`
-	Remains int      `json:"remains"`
-	Detail  []*Sheet `json:"detail,omitempty"`
-	Price   int64    `json:"price"`
-}
-
-type Sheet struct {
-	ID    int64  `json:"-"`
-	Rank  string `json:"-"`
-	Num   int64  `json:"num"`
-	Price int64  `json:"-"`
-
-	Mine           bool       `json:"mine,omitempty"`
-	Reserved       bool       `json:"reserved,omitempty"`
-	ReservedAt     *time.Time `json:"-"`
-	ReservedAtUnix int64      `json:"reserved_at,omitempty"`
-}
-
-type Reservation struct {
-	ID         int64      `json:"id"`
-	EventID    int64      `json:"-"`
-	SheetID    int64      `json:"-"`
-	UserID     int64      `json:"-"`
-	ReservedAt *time.Time `json:"-"`
-	CanceledAt *time.Time `json:"-"`
-
-	Event          *Event `json:"event,omitempty"`
-	SheetRank      string `json:"sheet_rank,omitempty"`
-	SheetNum       int64  `json:"sheet_num,omitempty"`
-	Price          int64  `json:"price,omitempty"`
-	ReservedAtUnix int64  `json:"reserved_at,omitempty"`
-	CanceledAtUnix int64  `json:"canceled_at,omitempty"`
-}
-
-type Administrator struct {
-	ID        int64  `json:"id,omitempty"`
-	Nickname  string `json:"nickname,omitempty"`
-	LoginName string `json:"login_name,omitempty"`
-	PassHash  string `json:"pass_hash,omitempty"`
-}
-
 func sessUserID(c echo.Context) int64 {
 	sess, _ := session.Get("session", c)
 	var userID int64
@@ -360,47 +299,7 @@ func main() {
 
 		return c.NoContent(204)
 	})
-	e.POST("/api/users", func(c echo.Context) error {
-		var params struct {
-			Nickname  string `json:"nickname"`
-			LoginName string `json:"login_name"`
-			Password  string `json:"password"`
-		}
-		c.Bind(&params)
-
-		tx, err := db.Begin()
-		if err != nil {
-			return err
-		}
-
-		var user User
-		if err := tx.QueryRow("SELECT * FROM users WHERE login_name = ?", params.LoginName).Scan(&user.ID, &user.LoginName, &user.Nickname, &user.PassHash); err != sql.ErrNoRows {
-			tx.Rollback()
-			if err == nil {
-				return resError(c, "duplicated", 409)
-			}
-			return err
-		}
-
-		res, err := tx.Exec("INSERT INTO users (login_name, pass_hash, nickname) VALUES (?, SHA2(?, 256), ?)", params.LoginName, params.Password, params.Nickname)
-		if err != nil {
-			tx.Rollback()
-			return resError(c, "", 0)
-		}
-		userID, err := res.LastInsertId()
-		if err != nil {
-			tx.Rollback()
-			return resError(c, "", 0)
-		}
-		if err := tx.Commit(); err != nil {
-			return err
-		}
-
-		return c.JSON(201, echo.Map{
-			"id":       userID,
-			"nickname": params.Nickname,
-		})
-	})
+	e.POST("/api/users", postUserHandler)
 	e.GET("/api/users/:id", func(c echo.Context) error {
 		var user User
 		if err := db.QueryRow("SELECT id, nickname FROM users WHERE id = ?", c.Param("id")).Scan(&user.ID, &user.Nickname); err != nil {
