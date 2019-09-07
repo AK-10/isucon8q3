@@ -86,7 +86,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		sheet.Reserved = true
 		sheet.ReservedAtUnix = r.ReservedAt.Unix()
 
-		event.Sheets[sheet.Rank].Detail[sheet.ID-1] = sheet
+		event.Sheets[sheet.Rank].Detail[sheet.Num-1] = sheet
 	}
 
 	return &event, nil
