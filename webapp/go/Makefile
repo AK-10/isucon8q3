@@ -6,4 +6,4 @@ clean:
 
 .PHONY: build
 build:
-	GOPATH=`pwd`:`pwd`/vendor go build -v ./src/torb/*.go
+	GOPATH=`pwd`:`pwd`/vendor go build -v torb
