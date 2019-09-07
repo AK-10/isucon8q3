@@ -25,15 +25,25 @@ func (r *Redisful) initEvents() {
 	}
 }
 
+func (e Event) toJson() map[string]interface{} {
+	res := make(map[string]interface{})
+	res["id"] = e.ID
+	res["title"] = e.Title
+	res["public"] = e.PublicFg
+	res["closed"] = e.ClosedFg
+	res["price"] = e.Price
+	return res
+}
+
 func (r *Redisful) updateEventInCache(e Event) {
-	err := r.SetHashToCache(EVENTS_KEY, e.ID, e)
+	err := r.SetHashToCache(EVENTS_KEY, e.ID, e.toJson())
 	if err != nil {
 		fmt.Println("ERROR UPDATE EVENT: ", err)
 	}
 }
 
 func (r *Redisful) addEventInCache(e Event) {
-	err := r.SetHashToCache(EVENTS_KEY, e.ID, e)
+	err := r.SetHashToCache(EVENTS_KEY, e.ID, e.toJson())
 	if err != nil {
 		fmt.Println("ERROR UPDATE EVENT: ", err)
 	}

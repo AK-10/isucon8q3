@@ -277,6 +277,10 @@ func main() {
 			return nil
 		}
 
+		r, _ := NewRedisful()
+		r.initEvents()
+		r.Close()
+
 		return c.NoContent(204)
 	})
 	e.POST("/api/users", func(c echo.Context) error {
