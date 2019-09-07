@@ -278,6 +278,7 @@ func main() {
 		}
 
 		r, _ := NewRedisful()
+		r.FLUSH_ALL()
 		r.initEvents()
 		r.Close()
 
