@@ -919,6 +919,9 @@ func getEvents(all bool) ([]*Event, error) {
 	} else {
 		events = sortEvents(events)
 		for i, v := range events {
+			if !all && !v.PublicFg {
+				continue
+			}
 			e, err := getEventWithoutDetail(*v)
 			if err != nil {
 				return nil, err
