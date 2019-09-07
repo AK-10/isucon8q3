@@ -28,9 +28,9 @@ func getEvents(all bool) ([]*Event, error) {
 }
 
 func getEventWithoutDetail(event Event) (*Event, error) {
-	(&event).initialize()
+	event = initEvent(event)
 
-	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL ", event.ID)
+	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL", event.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +58,14 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		return nil, err
 	}
 	// initialize
-	(&event).initialize()
+	event = initEvent(event)
 	var i int64
 	for i = 1; i <= 1000; i++ {
 		sheet, _ := getSheetByID(i)
 		// sheet.Mine = false
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, sheet)
 	}
-	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL ", event.ID)
+	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL", event.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -93,15 +93,14 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 }
 
 func getEventWithEvent(event Event, loginUserID int64) (*Event, error) {
-	// initialize
-	(&event).initialize()
+	event = initEvent(event)
 	var i int64
 	for i = 1; i <= 1000; i++ {
 		sheet, _ := getSheetByID(i)
 		// sheet.Mine = false
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, sheet)
 	}
-	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL ", event.ID)
+	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL", event.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,13 +121,13 @@ func getEventWithEvent(event Event, loginUserID int64) (*Event, error) {
 		sheet.Reserved = true
 		sheet.ReservedAtUnix = r.ReservedAt.Unix()
 
-		event.Sheets[sheet.Rank].Detail[sheet.ID-1] = sheet
+		event.Sheets[sheet.Rank].Detail[sheet.Num-1] = sheet
 	}
 
 	return &event, nil
 }
 
-func (e *Event) initialize() {
+func initEvent(e Event) Event {
 	e.Total = 1000
 	e.Remains = 1000
 	e.Sheets = map[string]*Sheets{
@@ -137,4 +136,5 @@ func (e *Event) initialize() {
 		"B": &Sheets{Total: 300, Remains: 300, Price: e.Price + 1000},
 		"C": &Sheets{Total: 500, Remains: 500, Price: e.Price + 0},
 	}
+	return e
 }
