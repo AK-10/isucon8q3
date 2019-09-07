@@ -239,6 +239,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	redisPool = newPool()
+
 	e := echo.New()
 	funcs := template.FuncMap{
 		"encode_json": func(v interface{}) string {
@@ -689,6 +691,15 @@ func main() {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+		r, _ := NewRedisful()
+		e := Event{
+			ID:       eventID,
+			Title:    params.Title,
+			PublicFg: params.Public,
+			ClosedFg: false,
+			Price:    int64(params.Price),
+		}
+		r.addEventInCache(e)
 
 		event, err := getEvent(eventID, -1)
 		if err != nil {
@@ -750,6 +761,11 @@ func main() {
 		if err := tx.Commit(); err != nil {
 			return err
 		}
+
+		r, _ := NewRedisful()
+		event.PublicFg = params.Public
+		event.ClosedFg = params.Closed
+		r.updateEventInCache(*event)
 
 		e, err := getEvent(eventID, -1)
 		if err != nil {
