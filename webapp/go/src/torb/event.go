@@ -1,12 +1,38 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 const (
 	EVENTS_KEY = "EVENTS"
 )
+
+func (r *Redisful) getEvents() ([]*Event, error) {
+	data, err := r.GetAllHashFromCache(EVENTS_KEY)
+	if err != nil {
+		return nil, err
+	}
+	events := unmarshalEvents(data)
+	return events, nil
+}
+
+func sortEvents(events []*Event) []*Event {
+	sort.Slice(events, func(i, j int) bool { return events[i].ID < events[j].ID })
+	return events
+}
+
+func unmarshalEvents(data [][]byte) []*Event {
+	events := make([]*Event, 0, len(data))
+	for i := range data {
+		var event Event
+		json.Unmarshal(data[i], &event)
+		events = append(events, &event)
+	}
+	return events
+}
 
 func (r *Redisful) initEvents() {
 	rows, err := db.Query("SELECT * FROM events")

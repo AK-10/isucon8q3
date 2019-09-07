@@ -892,27 +892,41 @@ func resError(c echo.Context, e string, status int) error {
 }
 
 func getEvents(all bool) ([]*Event, error) {
-	rows, err := db.Query("SELECT * FROM events")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	r, _ := NewRedisful()
 	var events []*Event
-	for rows.Next() {
-		var event Event
-		if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
-			return nil, err
-		}
-		if !all && !event.PublicFg {
-			continue
-		}
-		e, err := getEventWithoutDetail(event)
+	var err error
+	events, err = r.getEvents()
+	if err != nil {
+		rows, err := db.Query("SELECT * FROM events")
 		if err != nil {
 			return nil, err
 		}
-		events = append(events, e)
+		defer rows.Close()
+		for rows.Next() {
+			var event Event
+			if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+				return nil, err
+			}
+			if !all && !event.PublicFg {
+				continue
+			}
+			e, err := getEventWithoutDetail(event)
+			if err != nil {
+				return nil, err
+			}
+			events = append(events, e)
+		}
+	} else {
+		events = sortEvents(events)
+		for i, v := range events {
+			e, err := getEventWithoutDetail(*v)
+			if err != nil {
+				return nil, err
+			}
+			events[i] = e
+		}
 	}
+
 	return events, nil
 }
 
