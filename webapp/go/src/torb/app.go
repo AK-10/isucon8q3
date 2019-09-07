@@ -764,7 +764,8 @@ func main() {
 			return resError(c, "not_found", 404)
 		}
 
-		event, err := getEvent(eventID, -1)
+		var event Event
+		err = db.QueryRow("SELECT * FROM events WHERE id = ?", eventID).Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price)
 		if err != nil {
 			return err
 		}
