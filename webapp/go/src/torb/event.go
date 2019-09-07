@@ -92,6 +92,42 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 	return &event, nil
 }
 
+func getEventWithEvent(event Event, loginUserID int64) (*Event, error) {
+	// initialize
+	(&event).initialize()
+	var i int64
+	for i = 1; i <= 1000; i++ {
+		sheet, _ := getSheetByID(i)
+		// sheet.Mine = false
+		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, sheet)
+	}
+	rows, err := db.Query("SELECT * FROM reservations WHERE event_id = ? AND canceled_at IS NULL ", event.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r Reservation
+		if err := rows.Scan(&r.ID, &r.EventID, &r.SheetID, &r.UserID, &r.ReservedAt, &r.CanceledAt); err != nil {
+			return nil, err
+		}
+		sheet, err := getSheetByID(r.SheetID)
+		if err != nil {
+			return nil, err
+		}
+		event.Remains--
+		event.Sheets[sheet.Rank].Remains--
+		sheet.Mine = r.UserID == loginUserID
+		sheet.Reserved = true
+		sheet.ReservedAtUnix = r.ReservedAt.Unix()
+
+		event.Sheets[sheet.Rank].Detail[sheet.ID-1] = sheet
+	}
+
+	return &event, nil
+}
+
 func (e *Event) initialize() {
 	e.Total = 1000
 	e.Remains = 1000
